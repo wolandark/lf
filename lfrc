@@ -171,8 +171,8 @@ map x $$f
 map X !$f
 # map A mkdir
 map A push %mkdir<space>
-map <insert> touch
 map a rename # at the very end
+map <insert> touch
 
 # execute current file (must be executable)
 map x $$f
@@ -184,6 +184,7 @@ map + :video_preview
 map <c-f> :fzf_jump
 map gs :fzf_search
 
+# Move parent
 cmd move-parent &{{
     dironly="setlocal '$(dirname "$PWD")' dironly"
     lf -remote "send $id :updir; $dironly true; $1; $dironly false; open"
@@ -193,23 +194,24 @@ map J move-parent down
 map K move-parent up
 
 # Show progress for file copying
-# cmd paste &{{
-#     set -- $(cat ~/.local/share/lf/files)
-#     mode="$1"
-#     shift
-#     case "$mode" in
-#         copy)
-#             rsync -av --ignore-existing --progress -- "$@" . |
-#             stdbuf -i0 -o0 -e0 tr '\r' '\n' |
-#             while IFS= read -r line; do
-#                 lf -remote "send $id echo $line"
-#             done
-#             ;;
-#         move) mv -n -- "$@" .;;
-#     esac
-#     rm ~/.local/share/lf/files
-#     lf -remote "send clear"
-# }}
+cmd rpaste &{{
+    set -- $(cat ~/.local/share/lf/files)
+    mode="$1"
+    shift
+    case "$mode" in
+        copy)
+            rsync -av --ignore-existing --progress -- "$@" . |
+            stdbuf -i0 -o0 -e0 tr '\r' '\n' |
+            while IFS= read -r line; do
+                lf -remote "send $id echo $line"
+            done
+            ;;
+        move) mv -n -- "$@" .;;
+    esac
+    rm ~/.local/share/lf/files
+    lf -remote "send clear"
+}}
+map gp rpaste
 
 # bulkrename
 cmd bulk-rename ${{
@@ -235,6 +237,7 @@ cmd bulk-rename ${{
     rm -- "$old" "$new"
     lf -remote "send $id unselect"
 }}
+map gr bulk-rename
 
 # folow symlinks
 cmd follow_link %{{
@@ -267,6 +270,11 @@ cmd yank-basename-without-extension ${{
       xclip -i -selection clipboard
 }}
 
+map Yp yank-path
+map Yd yank-dirname
+map Yb yank-basename
+map Yn yank-basename-without-extension 
+
 # Ctrl+C to copy one file path
 cmd copy_to_clipboard %{{
     if type pbcopy > /dev/null 2>&1; then
@@ -290,6 +298,7 @@ cmd select-files &{{
 
     lf -remote "send $id :unselect; toggle $(get_files)"
 }}
+map <c-a> select-files
 
 cmd select-dirs &{{
     get_dirs() {
@@ -303,10 +312,8 @@ cmd select-dirs &{{
 
     lf -remote "send $id :unselect; toggle $(get_dirs)"
 }}
+map <c-d> select-dirs
 
-
-# Warn about nested instances
-&[ $LF_LEVEL -eq 1 ] || lf -remote "send $id echoerr \"Warning: You're in a nested lf instance!\""
 
 
 
