@@ -1,4 +1,12 @@
- Key Mapping  | Command Mapped          |
+#lf Config
+
+- Image preview with w3m
+- file previews with [pistol](https://github.com/doronbehar/pistol)
+- colors and icons
+- fzf integration
+- handful of useful custome commands
+
+| Key Mapping  | Command Mapped          |
 |--------------|-------------------------|
 | r            | rename                  |
 | \<delete\>     | delete                  |
