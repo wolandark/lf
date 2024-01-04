@@ -1,23 +1,13 @@
- # _____________________________
-# /\                            \
-# \_| ooooo        oooooooooooo |
- #  | `888'        `888'     `8 |
- #  |  888          888         |
- #  |  888          888oooo8    |
- #  |  888          888    "    |
- #  |  888       o  888         |
- #  | o888ooooood8 o888o        |
- #  |                           |
- #  |                           |
- #  |                           |
- #  |   ________________________|_
- #   \_/__________________________/
-
-# Set Borders
+# border
 set drawbox
+
+# show icons
+set icons
 
 # interpreter for shell commands
 set shell bash
+
+set previewer ~/go/bin/pistol
 
 # set '-eu' options for shell commands
 # These options are used to have safer shell commands. Option '-e' is used to
@@ -41,8 +31,29 @@ set scrolloff 10
 # Use the `dim` attribute instead of underline for the cursor in the preview pane
 set cursorpreviewfmt "\033[7;2m"
 
-# use enter for shell commands
+# fzf
+cmd fzf_search ${{
+    RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+    res="$(
+        FZF_DEFAULT_COMMAND="$RG_PREFIX ''" \
+            fzf --bind "change:reload:$RG_PREFIX {q} || true" \
+            --ansi --layout=reverse --header 'Search in files' \
+            | cut -d':' -f1 | sed 's/\\/\\\\/g;s/"/\\"/g'
+    )"
+    [ -n "$res" ] && lf -remote "send $id select \"$res\""
+}}
 
+cmd fzf_jump ${{
+    res="$(find . -maxdepth 1 | fzf --reverse --header='Jump to location' | sed 's/\\/\\\\/g;s/"/\\"/g')"
+    if [ -d "$res" ] ; then
+        cmd="cd"
+    elif [ -f "$res" ] ; then
+        cmd="select"
+    else
+        exit 0
+    fi
+    lf -remote "send $id $cmd \"$res\""
+}}
 
 # define a custom 'open' command
 # This command is called when current file is not a directory. You may want to
@@ -60,22 +71,12 @@ cmd open &{{
 # map r push :rename<space>
 
 # make sure trash folder exists
-# %mkdir -p ~/.trash
+%mkdir -p ~/.trash
 
 # move current file or selected files to trash folder
-# (also see 'man mv' for backup/overwrite options)
 cmd trash %set -f; mv $fx ~/.trash
 
-# define a custom 'delete' command
-cmd delete ${{
-    set -f
-    # printf "$fx\n"
-    # printf "delete?[y/n]"
-    # read ans
-    # [ "$ans" = "y" ] && rm -rf $fx
-    rm -rf $fx
-}}
-
+# define a custom 'delete' command with trash-put
 cmd delete ${{
     set -f
     printf "$fx\n"
@@ -83,26 +84,13 @@ cmd delete ${{
     read ans
     if [[ "$ans" == "y" || -z "$ans" ]];
     then
-    rm -rf $fx
+    trash-put $fx
     fi
 }}
 # use '<delete>' key for either 'trash' or 'delete' command
 # map <delete> trash
 
 # extract the current file with the right command
-# (xkcd link: https://xkcd.com/1168/)
-cmd extract ${{
-    set -f
-    case $f in
-        *.tar.bz|*.tar.bz2|*.tbz|*.tbz2) tar xjvf $f;;
-        *.tar.gz|*.tgz) tar xzvf $f;;
-        *.tar.xz|*.txz) tar xJvf $f;;
-        *.zip) unzip $f;;
-        *.rar) unrar x $f;;
-        *.7z) 7z x $f;;
-    esac
-}}
-
 cmd ex ${{
 set -f 
     case $f in
@@ -126,19 +114,19 @@ set -f
 # compress current file or selected files with tar and gunzip
 cmd tar ${{
     set -f
-    mkdir $1
-    cp -r $fx $1
-    tar czf $1.tar.gz $1
-    rm -rf $1
+    mkdir t$1
+    cp -r $fx t$1
+    tar czf $1.tar.gz t$1
+    rm -rf t$1
 }}
 
 # compress current file or selected files with zip
 cmd zip ${{
     set -f
-    mkdir $1
-    cp -r $fx $1
-    zip -r $1.zip $1
-    rm -rf $1
+    mkdir t$1
+    cp -r $fx t$1
+    zip -r $1.zip t$1
+    rm -rf t$1
 }}
 
 cmd mkdir ${{
@@ -153,24 +141,11 @@ cmd touch ${{
     touch $ans
 }}
 
-cmd fzf_jump ${{
-    res="$(find . -maxdepth 1 | fzf --reverse --header='Jump to location' | sed 's/\\/\\\\/g;s/"/\\"/g')"
-    if [ -d "$res" ] ; then
-        cmd="cd"
-    elif [ -f "$res" ] ; then
-        cmd="select"
-    else
-        exit 0
-    fi
-    lf -remote "send $id $cmd \"$res\""
-}}
-
-# set icons
 
 cmd setbg ${{
     cp "$f" ~/.config/lf/wall.jpg && feh --bg-scale "$f"
 }}
-map b setbg
+
 
 cmd video_preview ${{
     cache="$(mktemp "${TMPDIR:-/tmp}/thumb_cache.XXXXX")"
@@ -178,51 +153,50 @@ cmd video_preview ${{
     ~/.config/lf/draw_img.sh "$cache"
 }}
 
-map - $~/.config/lf/draw_img.sh "$f"
-map + :video_preview
-
-
-cmd fzf $vim $(find . -name "$1" | fzf)
-map <c-f> :fzf_jump
-
-map f push :fzf<space>
-# map f $vim $(fzf)
-
-# execute current file (must be executable)
-map x $$f
-map X !$f
-
 # dedicated keys for file opener actions
 map o &mimeopen $f
 map O $mimeopen --ask $f
 map <enter> shell
 
-map <c-f> $lf -remote "send $id select \"$(fzf)\""
-# map J $lf -remote "send $id cd $(sed -e 's/\s*#.*//' -e '/^$/d' -e 's/^\S*\s*//' ${XDG_CONFIG_HOME:-$HOME/.config}/shell/bm-dirs | fzf)"
-
 map D delete
-# map E extract
 map E ex
 map C copyto
 map M moveto
-map Z zip
-map T tar
-
-# map <c-n> push :mkdir<space>
-# map <c-r> reload
-# map <c-s> set hidden!
+map zz push :zip<space>
+map T push :tar<space>
 
 map <enter> shell
 
 map x $$f
 map X !$f
-map o &mimeopen "$f"
-map O $mimeopen --ask "$f"
-
-map a mkdir
+map A mkdir
 map <insert> touch
-map A rename # at the very end
+map a rename # at the very end
 
+# execute current file (must be executable)
+map x $$f
+map X !$f
+
+map b setbg
+map - $~/.config/lf/draw_img.sh "$f"
+map + :video_preview
+map <c-f> :fzf_jump
+map gs :fzf_search
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ===
 # map c push A<c-u> # new rename
 # map I push A<c-a> # at the very beginning
 # map i push A<a-b><a-b><a-f> # before extension
@@ -241,3 +215,7 @@ map A rename # at the very end
 # Source Bookmarks
 # source "~/.config/lf/shortcutrc"
 
+# map <c-f> $lf -remote "send $id select \"$(fzf)\""
+
+# map f push :fzf<space>
+# map f $vim $(fzf)
