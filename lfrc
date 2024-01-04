@@ -214,6 +214,7 @@ map gs :fzf_search
 
 # Source Bookmarks
 # source "~/.config/lf/shortcutrc"
+# source "~/.config/lf/colors"
 
 # map <c-f> $lf -remote "send $id select \"$(fzf)\""
 
