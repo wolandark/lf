@@ -1,4 +1,4 @@
-#lf Config
+# lf Config 
 
 - Image preview with w3m
 - file previews with [pistol](https://github.com/doronbehar/pistol)
