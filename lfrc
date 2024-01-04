@@ -314,7 +314,7 @@ cmd select-dirs &{{
 }}
 map <c-d> select-dirs
 
-
+map Pp $~/.config/lf/populate.sh
 
 
 
