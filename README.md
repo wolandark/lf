@@ -5,8 +5,10 @@
 - colors and icons
 - fzf integration
 - handful of useful custome commands
+<br>
 
 ## Custom bindings and Commands (The rest are lf defaults)
+
 | Key Mapping  | Command Mapped          |
 |--------------|-------------------------|
 | r            | rename                  |
@@ -33,4 +35,6 @@
 | \<c-d\>        | select-dirs             |
 | Pp           | populate.sh             |
 
-![image](https://github.com/wolandark/lf/assets/107309764/2c92d8e8-5a10-4185-ad5f-836853e2de69)
+<br>
+
+![image](https://github.com/wolandark/lf/assets/107309764/391a98c5-5534-401b-88e3-21a671b35b89)
